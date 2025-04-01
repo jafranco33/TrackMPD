@@ -75,6 +75,12 @@ Lon=linspace(minLon,maxLon,numlon);
 
 [Lon_matrix,Lat_matrix]=meshgrid(Lon,Lat);
 
+% Domain display
+%figure;
+%plot(Lon_matrix,Lat_matrix,'r.')
+%hold on
+%plot(domain(:,1),domain(:,2));
+%drawnow
 
 % (water/land) mask
 % Fixed => Not updated at each time step
@@ -87,13 +93,10 @@ end
 ti(ti==0)=NaN;
 mask_water=zeros(size(ti));
 mask_water(~isnan(ti))=1;
-mask_land = ~mask_water;
-mask_land3D = mask_land;
-for i=1:numlvl-1
-    mask_land3D = cat(3,mask_land3D,mask_land);
-end
 
-
+%hold on
+%plot(Lon_matrix(mask_water==1),Lat_matrix(mask_water==1),'g.')
+%drawnow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Read and save Time information    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -119,16 +122,15 @@ for t = 1:NTimeStamps
     %depth unit: m
     %for lv=1:numlvl %2D IJR 300123
     lv=1; %2D IJR 300123
-        %DEPTH(:,lv,t) = data_t.RESULT(NumGridPts*(numlvl-lv)+1:NumGridPts*(numlvl+1-lv),1); %2D IJR 300123
-        UU(:,lv,t) = data_t.RESULT(NumGridPts*(data.NPLAN-lv)+1:NumGridPts*(data.NPLAN+1-lv),2);
-        VV(:,lv,t) = data_t.RESULT(NumGridPts*(data.NPLAN-lv)+1:NumGridPts*(data.NPLAN+1-lv),3);        
+        DEPTH(:,lv,t) = data_t.RESULT(NumGridPts*(numlvl-lv)+1:NumGridPts*(numlvl+1-lv),3); %2D IJR 300123
+        UU(:,lv,t) = data_t.RESULT(NumGridPts*(data.NPLAN-lv)+1:NumGridPts*(data.NPLAN+1-lv),1);
+        VV(:,lv,t) = data_t.RESULT(NumGridPts*(data.NPLAN-lv)+1:NumGridPts*(data.NPLAN+1-lv),2);        
     %end %2D IJR 300123
     
 end
 
 % Calculate Bottom Depth from Depth (last layer, first time step)
-DEPTH_END = data_t.RESULT(NumGridPts*(data.NPLAN-data.NPLAN)+1:NumGridPts*(data.NPLAN+1-data.NPLAN),1); %2D IJR 300123
-%BottomDepth=griddata(x,y,DEPTH(:,numlvl,1),Lon_matrix,Lat_matrix,'nearest'); % Interpolation of Depth in the new grid
+DEPTH_END = data_t.RESULT(NumGridPts*(data.NPLAN-data.NPLAN)+1:NumGridPts*(data.NPLAN+1-data.NPLAN),5); %2D IJR 300123 % Interpolation of Depth in the new grid
 BottomDepth=griddata(x,y,DEPTH_END(:,numlvl,1),Lon_matrix,Lat_matrix,'nearest');  %2D IJR 300123
 BottomDepth(mask_water==0)=NaN; %Land point=0
 %BottomDepth(isnan(BottomDepth))=1; 
@@ -149,7 +151,7 @@ for i=1:NTimeStamps
     v=nan(numlat,numlon,numlvl);
     w=nan(numlat,numlon,numlvl);
     E=nan(numlat,numlon);
-    BottomDepth=nan(numlat,numlon);
+    %BottomDepth=nan(numlat,numlon);
     
     % 3D variables
     for j=1:numlvl
@@ -163,11 +165,11 @@ for i=1:NTimeStamps
         Vaux(isnan(Vaux))=0; 
         v(:,:,j)=Vaux;
         
-        %Depth_aux=griddata(x,y,DEPTH(:,j,i),Lon_matrix,Lat_matrix,'linear'); %2D IJR 300123
-        %Depth_aux(mask_water==0)=NaN; %Land point=NaN%2D IJR 300123
-        %depth(:,:,j)=Depth_aux; %2D IJR 300123
+        Depth_aux=griddata(x,y,DEPTH(:,j,i),Lon_matrix,Lat_matrix,'linear'); %2D IJR 300123
+        Depth_aux(mask_water==0)=NaN; %Land point=NaN%2D IJR 300123
+        depth(:,:,j)=Depth_aux; %2D IJR 300123
         
-        depth(:,:,j)=-1; %2D IJR 300123
+        %depth(:,:,j)=-1; %2D IJR 300123
         %depth(mask_water==0)=NaN; %2D IJR 300123
         
         clear Uaux Vaux Depth_aux
@@ -180,7 +182,7 @@ for i=1:NTimeStamps
     %E=depth(:,:,1); %2D IJR 300123
     %BottomDepth=depth(:,:,end); %2D IJR 300123
     
-    E=data_t.RESULT(NumGridPts*(data.NPLAN-1)+1:NumGridPts*(data.NPLAN+1-1),1); %2D IJR 300123
+    E=data_t.RESULT(NumGridPts*(data.NPLAN-1)+1:NumGridPts*(data.NPLAN+1-1),5); %2D IJR 300123
     
     
     %1D variables: time
